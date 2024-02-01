@@ -149,7 +149,7 @@ class VariationModel {
             Object.fromEntries(Object.entries(loc).filter(([_, v]) => v !== 0))
         );
 
-        let keyFunc = this.getMasterLocationsSortKeyFunc(nonZeroLocations, this.axisOrder);
+        let keyFunc = VariationModel.getMasterLocationsSortKeyFunc(nonZeroLocations, this.axisOrder);
         this.locations = nonZeroLocations.sort((a, b) => keyFunc(a) - keyFunc(b));
 
         this.mapping = this.locations.map(l => nonZeroLocations.indexOf(l));
@@ -277,7 +277,7 @@ class VariationModel {
 
             for (let j = 0; j < i; j++) {
                 let prevRegion = regions[j];
-                if (new Set(Object.keys(prevRegion)).size !== locAxes.size) {
+                if (new Set(Object.keys(prevRegion)) !== locAxes) {
                     continue;
                 }
 
@@ -363,7 +363,7 @@ class VariationModel {
             let deltaWeight = {};
             for (let j = 0; j < i; j++) {
                 let support = this.supports[j];
-                let scalar = this.supportScalar(loc, support); // Ensure supportScalar function is defined
+                let scalar = supportScalar(loc, support);
                 if (scalar) {
                     deltaWeight[j] = scalar;
                 }
@@ -482,50 +482,17 @@ function piecewiseLinearMap(v, mapping) {
 }
 
 
-const process = require('process');
+function main(locations) {
+    console.log("Locations:");
+    console.log(locations);
+    const axes = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+    const locs = locations.map(s => Object.fromEntries(axes.map((a, i) => [a, parseFloat(s.split(',')[i] || "0")])));
 
-function main(args) {
-    // Assuming `args` is an array of command-line arguments
-    let logLevel = "INFO";
-    let designSpaceFile = null;
-    let locations = null;
-
-    for (let i = 0; i < args.length; i++) {
-        if (args[i] === "--loglevel" && i + 1 < args.length) {
-            logLevel = args[i + 1];
-            i++; // Skip next argument since it's part of this option
-        } else if (args[i] === "-d" && i + 1 < args.length) {
-            designSpaceFile = args[i + 1];
-            i++;
-        } else if (args[i] === "-l") {
-            locations = [];
-            for (let j = i + 1; j < args.length; j++) {
-                if (args[j].startsWith("-")) {
-                    break; // Next argument is a new option
-                }
-                locations.push(args[j]);
-            }
-        }
-    }
-
-    // Configure logger based on logLevel
-    // JavaScript equivalent of logging configuration goes here
-
-    if (designSpaceFile) {
-        // Logic to handle design space file
-        // Omitted in translation as JavaScript doesn't have a direct equivalent of fontTools
-    } else if (locations) {
-        const axes = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
-        const locs = locations.map(s => Object.fromEntries(axes.map((a, i) => [a, parseFloat(s.split(',')[i] || "0")])));
-
-        const model = new VariationModel(locs); // Assuming VariationModel is defined
-        console.log("Sorted locations:");
-        console.log(model.locations);
-        console.log("Supports:");
-        console.log(model.supports);
-    }
-}
-
-if (require.main === module) {
-    main(process.argv.slice(2));
+    console.log("Locations:");
+    console.log(locs);
+    const model = new VariationModel(locs);
+    console.log("Sorted locations:");
+    console.log(model.locations);
+    console.log("Supports:");
+    console.log(model.supports);
 }
